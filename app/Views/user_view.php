@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CRUD CI PAPAT PostgreSQL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">CRUD Data User</h2>
+
+    <!-- Tombol Tambah -->
+    <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+         <input type="text" id="search" class="form-control flex-grow-1" placeholder="Search...">
+        <button class="btn btn-primary" id="addNew">
+            <i class="fa fa-plus me-2"></i>Tambah User
+        </button>
+    </div>
+
+    <!-- Table -->
+    <table class="table table-hover" id="userTable">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nama</th>
+                <th>Email</th>
+                <th>Gender</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Modal Form -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Tambah User
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="userForm">
+            <input type="hidden" id="user_id">
+            <div class="mb-3">
+                <label class="form-label">Nama</label>
+                <input type="text" id="nama" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Gender</label>
+                <select id="gender" class="form-select" required>
+                    <option value="gender">Pilih Gender</option>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function(){
+    const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+
+    // Fetch Data
+    function fetchData(keyword=''){
+        $.get('/users/fetch',{ search: keyword}, function(data){
+            let rows = '';
+            JSON.parse(data).forEach(user=>{
+                rows += `<tr>
+                    <td>${user.id}</td>
+                    <td>${user.nama}</td>
+                    <td>${user.email}</td>
+                    <td>${user.gender}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit" data-id="${user.id}">
+                            <i class="fa fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger delete" data-id="${user.id}">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            $('#userTable tbody').html(rows);
+        });
+    }
+
+    fetchData();
+
+    // Live Search
+    $('#search').keyup(function(){
+        fetchData($(this).val());
+    });
+
+    // Tambah User
+    $('#addNew').click(function(){
+        $('#userForm')[0].reset();
+        $('#user_id').val('');
+        $('.modal-title').text('Tambah User');
+        userModal.show();
+    });
+
+    // Create / Update
+    $('#userForm').submit(function(e){
+        e.preventDefault();
+        let id = $('#user_id').val();
+        let url = id ? '/users/update/'+id : '/users/create';
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { nama: $('#nama').val(), 
+                    email: $('#email').val(), 
+                    gender: $('#gender').val() },
+            success: function(res){
+                userModal.hide();
+                fetchData();
+            }
+        });
+    });
+
+    // Edit
+    $(document).on('click','.edit', function(){
+        let id = $(this).data('id');
+        $.get('/users/edit/'+id, function(data){
+            let user = JSON.parse(data);
+            $('#user_id').val(user.id);
+            $('#nama').val(user.nama);
+            $('#email').val(user.email);
+            $('#gender').val(user.gender);
+            $('.modal-title').text('Edit User');
+            userModal.show();
+        });
+    });
+
+    // Delete
+    $(document).on('click','.delete', function(){
+        let id = $(this).data('id');
+        if(confirm('Apakah anda yakin untuk menghapus user dengan ID ' + id + '?')){
+            $.ajax({
+                url: '/users/delete/'+id,
+                type: 'DELETE',
+                success: function(res){
+                    fetchData();
+                }
+            });
+        }
+    });
+
+});
+</script>
+</body>
+</html>
