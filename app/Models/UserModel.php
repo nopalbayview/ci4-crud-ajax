@@ -15,9 +15,9 @@ class UserModel extends Model
 
     public function search($keyword) 
     {
-        return $this->like('nama', $keyword)
-                    ->orLike('email', $keyword)
-                    ->orLike('gender', $keyword)
+        return $this->where("nama ILIKE '%{$keyword}%'")
+                    ->orWhere("email ILIKE '%{$keyword}%'")
+                    ->orWhere("gender ILIKE '%{$keyword}%'")
                     ->orderBy('id','ASC')
                     ->findAll();
     }                
