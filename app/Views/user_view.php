@@ -91,7 +91,7 @@
                         <button class="btn btn-sm btn-warning edit" data-id="${user.id}">
                             <i class="fa fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger delete" data-nama="${user.nama}">
+                        <button class="btn btn-sm btn-danger delete" data-id="${user.id}">
                             <i class="fa fa-trash"></i>
                         </button>
                     </td>
@@ -141,7 +141,7 @@
         $.get('/users/edit/'+id, function(data){
             let user = typeof data === 'string' ? JSON.parse(data) : data;
 
-            //$('#user_id').val(user.id);
+            $('#user_id').val(user.id);
             $('#nama').val(user.nama);
             $('#email').val(user.email);
             $('#gender').val(user.gender);
@@ -153,10 +153,12 @@
     });
 
     $(document).on('click','.delete', function(){
-        let nama = $(this).data('nama');
-        if(confirm('Yakin hapus dengan nama '+nama+'?')){
+        let id = $(this).data('id');
+        let nama = $(this).closest('tr').find('td:first').text(); // ambil nama dari kolom pertama
+
+        if(confirm('Yakin hapus user "' + nama + '"?')){
             $.ajax({
-                url: '/users/delete/'+nama,
+                url: '/users/delete/' + id,
                 type: 'DELETE',
                 success: function(res){
                     fetchData();
