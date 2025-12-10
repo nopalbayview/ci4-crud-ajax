@@ -9,11 +9,11 @@
 </head>
 <body>
 <div class="container mt-5">
-    <h2 class="text-center mb-4">CRUD Data User</h2>
+    <h2 class="text-center mb-4">Kelola Daftar Pengguna</h2>
 
     <!-- Tombol Tambah -->
     <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
-         <input type="text" id="search" class="form-control flex-grow-1" placeholder="Search...">
+         <input type="text" id="search" class="form-control flex-grow-1" placeholder="Cari disini...">
         <button class="btn btn-primary" id="addNew">
             <i class="fa fa-plus me-2"></i>Tambah User
         </button>
@@ -27,6 +27,7 @@
                 <th>Nama</th>
                 <th>Email</th>
                 <th>Gender</th>
+                <th>Umur</th>
                 <th>Aksi</th>
             </tr>
         </thead>
@@ -57,10 +58,13 @@
             <div class="mb-3">
                 <label class="form-label">Gender</label>
                 <select id="gender" class="form-select" required>
-                    <option value="gender">Pilih Gender</option>
                     <option value="Laki-laki">Laki-laki</option>
                     <option value="Perempuan">Perempuan</option>
                 </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Umur</label>
+                <input type="number" id="umur" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-success">Save</button>
         </form>
@@ -71,41 +75,42 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-$(document).ready(function(){
+    $(document).ready(function(){
     const userModal = new bootstrap.Modal(document.getElementById('userModal'));
 
-    // Fetch Data
     function fetchData(keyword=''){
-        $.get('/users/fetch',{ search: keyword}, function(data){
+        $.get('/users/fetch', { search: keyword }, function(data){
             let rows = '';
-            JSON.parse(data).forEach(user=>{
+            const users = typeof data === 'string' ? JSON.parse(data) : data;
+
+            users.forEach(user=>{
                 rows += `<tr>
                     <td>${user.id}</td>
                     <td>${user.nama}</td>
                     <td>${user.email}</td>
                     <td>${user.gender}</td>
+                    <td>${user.umur}</td>
                     <td>
                         <button class="btn btn-sm btn-warning edit" data-id="${user.id}">
-                            <i class="fa fa-edit"></i> Edit
+                            <i class="fa fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-danger delete" data-id="${user.id}">
-                            <i class="fa fa-trash"></i> Delete
+                            <i class="fa fa-trash"></i>
                         </button>
                     </td>
                 </tr>`;
             });
+
             $('#userTable tbody').html(rows);
         });
     }
 
     fetchData();
 
-    // Live Search
     $('#search').keyup(function(){
         fetchData($(this).val());
     });
 
-    // Tambah User
     $('#addNew').click(function(){
         $('#userForm')[0].reset();
         $('#user_id').val('');
@@ -113,17 +118,20 @@ $(document).ready(function(){
         userModal.show();
     });
 
-    // Create / Update
     $('#userForm').submit(function(e){
         e.preventDefault();
         let id = $('#user_id').val();
         let url = id ? '/users/update/'+id : '/users/create';
+
         $.ajax({
             url: url,
             type: 'POST',
-            data: { nama: $('#nama').val(), 
-                    email: $('#email').val(), 
-                    gender: $('#gender').val() },
+            data: {
+                nama: $('#nama').val(),
+                email: $('#email').val(),
+                gender: $('#gender').val(),
+                umur: $('#umur').val()
+            },
             success: function(res){
                 userModal.hide();
                 fetchData();
@@ -131,24 +139,25 @@ $(document).ready(function(){
         });
     });
 
-    // Edit
     $(document).on('click','.edit', function(){
         let id = $(this).data('id');
         $.get('/users/edit/'+id, function(data){
-            let user = JSON.parse(data);
+            let user = typeof data === 'string' ? JSON.parse(data) : data;
+
             $('#user_id').val(user.id);
             $('#nama').val(user.nama);
             $('#email').val(user.email);
             $('#gender').val(user.gender);
+            $('#umur').val(user.umur);
+
             $('.modal-title').text('Edit User');
             userModal.show();
         });
     });
 
-    // Delete
     $(document).on('click','.delete', function(){
         let id = $(this).data('id');
-        if(confirm('Apakah anda yakin untuk menghapus user dengan ID ' + id + '?')){
+        if(confirm('Yakin hapus user ID ' + id + '?')){
             $.ajax({
                 url: '/users/delete/'+id,
                 type: 'DELETE',
