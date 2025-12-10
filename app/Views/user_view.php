@@ -11,7 +11,6 @@
 <div class="container mt-5">
     <h2 class="text-center mb-4">Kelola Daftar Pengguna</h2>
 
-    <!-- Tombol Tambah -->
     <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
          <input type="text" id="search" class="form-control flex-grow-1" placeholder="Cari disini...">
         <button class="btn btn-primary" id="addNew">
@@ -23,7 +22,7 @@
     <table class="table table-hover" id="userTable">
         <thead class="table-dark">
             <tr>
-                <th>ID</th>
+                <!--<th>ID</th>-->
                 <th>Nama</th>
                 <th>Email</th>
                 <th>Gender</th>
@@ -35,7 +34,6 @@
     </table>
 </div>
 
-<!-- Modal Form -->
 <div class="modal fade" id="userModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -85,7 +83,6 @@
 
             users.forEach(user=>{
                 rows += `<tr>
-                    <td>${user.id}</td>
                     <td>${user.nama}</td>
                     <td>${user.email}</td>
                     <td>${user.gender}</td>
