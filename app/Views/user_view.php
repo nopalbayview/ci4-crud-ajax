@@ -10,6 +10,7 @@
 <body>
 <div class="container mt-5">
     <h2 class="text-center mb-4">Kelola Daftar Pengguna</h2>
+    <h5 align="center">Nouval Adibayu Kencono</h5>
 
     <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
          <input type="text" id="search" class="form-control flex-grow-1" placeholder="Cari disini...">
@@ -73,31 +74,25 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    $(document).ready(function(){
+$(document).ready(function(){
+
     const userModal = new bootstrap.Modal(document.getElementById('userModal'));
 
-    function fetchData(keyword=''){
-        $.get('/users/fetch', { search: keyword }, function(data){
+    function fetchData(keyword = '') {
+        $.getJSON('/users/fetch', { search: keyword }, function(users){
             let rows = '';
-            const users = typeof data === 'string' ? JSON.parse(data) : data;
-
-            users.forEach(user=>{
+            users.forEach(user => {
                 rows += `<tr>
                     <td>${user.nama}</td>
                     <td>${user.email}</td>
                     <td>${user.gender}</td>
                     <td>${user.umur}</td>
                     <td>
-                        <button class="btn btn-sm btn-warning edit" data-id="${user.id}">
-                            <i class="fa fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete" data-id="${user.id}">
-                            <i class="fa fa-trash"></i>
-                        </button>
+                        <button class="btn btn-warning btn-sm edit" data-id="${user.id}">Edit</button>
+                        <button class="btn btn-danger btn-sm delete" data-id="${user.id}" data-nama="${user.nama}">Hapus</button>
                     </td>
                 </tr>`;
             });
-
             $('#userTable tbody').html(rows);
         });
     }
@@ -118,56 +113,43 @@
     $('#userForm').submit(function(e){
         e.preventDefault();
         let id = $('#user_id').val();
-        let url = id ? '/users/update/'+id : '/users/create';
-
-        $.ajax({
-            url: url,
-            type: 'POST',
-            data: {
-                nama: $('#nama').val(),
-                email: $('#email').val(),
-                gender: $('#gender').val(),
-                umur: $('#umur').val()
-            },
-            success: function(res){
-                userModal.hide();
-                fetchData();
-            }
+        let url = id ? '/users/update/' + id : '/users/create';
+        $.post(url, {
+            nama: $('#nama').val(),
+            email: $('#email').val(),
+            gender: $('#gender').val(),
+            umur: $('#umur').val()
+        }, function(){
+            userModal.hide();
+            fetchData();
         });
     });
 
-    $(document).on('click','.edit', function(){
+    $(document).on('click', '.edit', function(){
         let id = $(this).data('id');
-        $.get('/users/edit/'+id, function(data){
-            let user = typeof data === 'string' ? JSON.parse(data) : data;
-
+        $.getJSON('/users/edit/' + id, function(user){
             $('#user_id').val(user.id);
             $('#nama').val(user.nama);
             $('#email').val(user.email);
             $('#gender').val(user.gender);
             $('#umur').val(user.umur);
-
             $('.modal-title').text('Edit User');
             userModal.show();
         });
     });
 
-    $(document).on('click','.delete', function(){
+    $(document).on('click', '.delete', function(){
         let id = $(this).data('id');
-        let nama = $(this).closest('tr').find('td:first').text(); // ambil nama dari kolom pertama
-
-        if(confirm('Yakin hapus user "' + nama + '"?')){
-            $.ajax({
-                url: '/users/delete/' + id,
-                type: 'DELETE',
-                success: function(res){
-                    fetchData();
-                }
-            }); 
-        }
+        let nama = $(this).data('nama');
+        if(!confirm(`Yakin hapus user "${nama}"?`)) return;
+        $.post('/users/delete/' + id, { _method: 'DELETE' }, function(){
+            fetchData();
+        });
     });
 
 });
+
 </script>
+
 </body>
 </html>

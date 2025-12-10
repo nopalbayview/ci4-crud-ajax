@@ -1,56 +1,61 @@
 <?php
+
 namespace App\Controllers;
-
+use App\Controllers\BaseController;
 use App\Models\UserModel;
-use CodeIgniter\Controller;
 
-class User extends Controller
+class User extends BaseController
 {
-    protected $model;
-
-    public function __construct() 
-    {
-        $this->model = new UserModel();
-    }
-
-    public function index() 
-    {
+    public function index() {
         return view('user_view');
     }
 
-    public function fetch() 
-    {
+    public function fetch() {
         $keyword = $this->request->getGet('search');
-        $data = $keyword
-            ? $this->model->search($keyword)
-            : $this->model->orderBy('id','ASC')->findAll();
-
-        return $this->response->setJSON($data);
+        $model = new UserModel();
+        if($keyword) {
+            $users = $model->like('nama', $keyword)
+                           ->orLike('email', $keyword)
+                           ->findAll();
+        } else {
+            $users = $model->findAll();
+        }
+        return $this->response->setJSON($users);
     }
 
-    public function create() 
-    {
-        $data = $this->request->getPost();
-        $this->model->insert($data);
-
-        return $this->response->setJSON(['status'=>'success']);
+    public function store() {
+        $model = new UserModel();
+        $data = [
+            'nama'   => $this->request->getPost('nama'),
+            'email'  => $this->request->getPost('email'),
+            'gender' => $this->request->getPost('gender'),
+            'umur'   => $this->request->getPost('umur'),
+        ];
+        $model->insert($data);
+        return $this->response->setJSON(['status' => 'success']);
     }
 
     public function edit($id) {
-        return $this->response->setJSON($this->model->find($id));
+        $model = new UserModel();
+        $user = $model->find($id);
+        return $this->response->setJSON($user);
     }
 
     public function update($id) {
-        $data = $this->request->getPost();
-        $this->model->update($id, $data);
-
-        return $this->response->setJSON(['status'=>'success']);
+        $model = new UserModel();
+        $data = [
+            'nama'   => $this->request->getPost('nama'),
+            'email'  => $this->request->getPost('email'),
+            'gender' => $this->request->getPost('gender'),
+            'umur'   => $this->request->getPost('umur'),
+        ];
+        $model->update($id, $data);
+        return $this->response->setJSON(['status' => 'success']);
     }
 
-    public function delete($id) 
-    {
-        $this->model->delete($id);
-
-        return $this->response->setJSON(['status'=>'success']);
+    public function delete($id) {
+        $model = new UserModel();
+        $model->delete($id);
+        return $this->response->setJSON(['status' => 'success']);
     }
 }
