@@ -18,6 +18,7 @@ class UserModel extends Model
         return $this->where("nama ILIKE '%{$keyword}%'")
                     ->orWhere("email ILIKE '%{$keyword}%'")
                     ->orWhere("gender ILIKE '%{$keyword}%'")
+                    ->orWhere("umur::text ILIKE '%{$keyword}%'")
                     ->orderBy('id','ASC')
                     ->findAll();
     }                
