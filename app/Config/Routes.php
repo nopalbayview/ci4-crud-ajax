@@ -1,5 +1,6 @@
 <?php
 
+use App\Controllers\User;
 use CodeIgniter\Router\RouteCollection;
 
 /**
@@ -7,9 +8,9 @@ use CodeIgniter\Router\RouteCollection;
  */
 //$routes->get('/', 'Login::index');
 
-$routes->get('/users', 'User::index');
-$routes->get('/users/fetch', 'User::fetch');
-$routes->post('/users/create', 'User::store');     
-$routes->get('/users/edit/(:num)', 'User::edit/$1'); 
-$routes->post('/users/update/(:num)', 'User::update/$1'); 
-$routes->post('/users/delete/(:num)', 'User::delete/$1'); 
+$routes->get('users', 'User::index');
+$routes->get('users/fetch', 'User::fetch');
+$routes->post('users/store', 'User::store');
+$routes->get('users/edit/(:num)', 'User::edit/$1');
+$routes->post('users/update/(:num)', 'User::update/$1');
+$routes->post('users/delete/(:num)', 'User::delete/$1');

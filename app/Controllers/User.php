@@ -1,61 +1,79 @@
 <?php
 
 namespace App\Controllers;
+
 use App\Controllers\BaseController;
 use App\Models\UserModel;
+use CodeIgniter\HTTP\ResponseInterface;
 
 class User extends BaseController
 {
-    public function index() {
+    public function index()
+    {
         return view('user_view');
     }
 
-    public function fetch() {
-        $keyword = $this->request->getGet('search');
+    public function fetch() 
+    {
+        $query = $this->request->getVar('query');
         $model = new UserModel();
-        if($keyword) {
-            $users = $model->like('nama', $keyword)
-                           ->orLike('email', $keyword)
-                           ->findAll();
+        $data = $model->getUsers($query);
+        return $this->response->setJSON($data);
+    }
+
+    public function update($id)
+    {
+        $model = new UserModel();
+        $data = [
+            'nama' => $this->request->getPost('nama'),
+            'email' => $this->request->getPost('email'),
+            'gender' => $this->request->getPost('gender'),
+            'umur' => $this->request->getPost('umur'),
+        ];
+
+        if ($model->updateUser($id, $data)) {
+            return $this->response->setJSON(['status' => 'success']);
         } else {
-            $users = $model->findAll();
+            return $this->response->setJSON(['status' => 'error', 'errors' => $model->errors()]);
         }
-        return $this->response->setJSON($users);
     }
 
-    public function store() {
+    public function delete($id)
+    {
+        $model = new UserModel();
+        if ($model->deleteUser($id)) {
+            return $this->response->setJSON(['status' => 'success']);
+        } else {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Gagal menghapus user']);
+        }
+    }
+
+    public function store()
+    {
         $model = new UserModel();
         $data = [
-            'nama'   => $this->request->getPost('nama'),
-            'email'  => $this->request->getPost('email'),
+            'nama' => $this->request->getPost('nama'),
+            'email' => $this->request->getPost('email'),
             'gender' => $this->request->getPost('gender'),
-            'umur'   => $this->request->getPost('umur'),
+            'umur' => $this->request->getPost('umur'),
         ];
-        $model->insert($data);
-        return $this->response->setJSON(['status' => 'success']);
+
+        // Hapus validasi manual, gunakan Model
+        if ($model->saveUser($data)) {
+            return $this->response->setJSON(['status' => 'success']);
+        } else {
+            return $this->response->setJSON(['status' => 'error', 'errors' => $model->errors()]);
+        }
     }
 
-    public function edit($id) {
+    public function edit($id) 
+    {
         $model = new UserModel();
-        $user = $model->find($id);
-        return $this->response->setJSON($user);
-    }
-
-    public function update($id) {
-        $model = new UserModel();
-        $data = [
-            'nama'   => $this->request->getPost('nama'),
-            'email'  => $this->request->getPost('email'),
-            'gender' => $this->request->getPost('gender'),
-            'umur'   => $this->request->getPost('umur'),
-        ];
-        $model->update($id, $data);
-        return $this->response->setJSON(['status' => 'success']);
-    }
-
-    public function delete($id) {
-        $model = new UserModel();
-        $model->delete($id);
-        return $this->response->setJSON(['status' => 'success']);
+        $data = $model->editUser($id);
+        if ($data) {
+            return $this->response->setJSON($data);
+        } else {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'User tidak ditemukan']);
+        }
     }
 }

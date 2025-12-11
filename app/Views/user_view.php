@@ -42,30 +42,30 @@
         <h5 class="modal-title">Tambah User
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="userForm">
-            <input type="hidden" id="user_id">
+        </div>
+            <div class="modal-body">
+                <form id="userForm">
+                <input type="hidden" id="id" name="id">
             <div class="mb-3">
-                <label class="form-label">Nama</label>
-                <input type="text" id="nama" class="form-control" required>
+            <label>Nama</label>
+                <input type="text" id="nama" name="nama" class="form-control" required> 
             </div>
             <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" id="email" class="form-control" required>
+                <label>Email</label>
+            <input type="email" id="email" name="email" class="form-control" required> 
             </div>
             <div class="mb-3">
-                <label class="form-label">Gender</label>
-                <select id="gender" class="form-select" required>
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
-                </select>
+                <label>Gender</label>
+            <select id="gender" name="gender" class="form-select" required>
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+            </select>
             </div>
             <div class="mb-3">
-                <label class="form-label">Umur</label>
-                <input type="number" id="umur" class="form-control" required>
+                <label>Umur</label>
+                <input type="number" id="umur" name="umur" class="form-control" required> 
             </div>
-            <button type="submit" class="btn btn-success">Save</button>
+        <button type="submit" class="btn btn-success">Save</button>
         </form>
       </div>
     </div>
@@ -74,82 +74,144 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-$(document).ready(function(){
 
-    const userModal = new bootstrap.Modal(document.getElementById('userModal'));
-
-    function fetchData(keyword = '') {
-        $.getJSON('/users/fetch', { search: keyword }, function(users){
+function fetchUsers(query = null) {
+    query = $('#search').val();
+    $.ajax({
+        url: '/users/fetch?query=' + encodeURIComponent(query), // Encode query
+        method: 'GET',
+        success: function(data){
             let rows = '';
-            users.forEach(user => {
-                rows += `<tr>
-                    <td>${user.nama}</td>
-                    <td>${user.email}</td>
-                    <td>${user.gender}</td>
-                    <td>${user.umur}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm edit" data-id="${user.id}">Edit</button>
-                        <button class="btn btn-danger btn-sm delete" data-id="${user.id}" data-nama="${user.nama}">Hapus</button>
-                    </td>
-                </tr>`;
-            });
+            try {
+                let users = (typeof data === 'string') ? JSON.parse(data) : data;
+                users.forEach(u => {
+                    rows += `
+                        <tr>
+                            <td>${u.nama}</td>
+                            <td>${u.email}</td>
+                            <td>${u.gender}</td>
+                            <td>${u.umur}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm edit" data-id="${u.id}">Edit</button>
+                                <button class="btn btn-danger btn-sm delete" data-id="${u.id}">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch(err) {
+                console.error("JSON error:", err);
+                rows = '<tr><td colspan="5" class="text-center">Error loading data</td></tr>';
+            }
             $('#userTable tbody').html(rows);
-        });
-    }
-
-    fetchData();
-
-    $('#search').keyup(function(){
-        fetchData($(this).val());
+        },
+        error: function(xhr){
+            console.error(xhr.responseText);
+            $('#userTable tbody').html('<tr><td colspan="5">Failed to load data</td></tr>');
+        }
     });
+}
 
+$(document).ready(function(){
+    fetchUsers();
+
+    // Handler untuk button Tambah User (ditambahkan)
     $('#addNew').click(function(){
         $('#userForm')[0].reset();
-        $('#user_id').val('');
-        $('.modal-title').text('Tambah User');
-        userModal.show();
+        $('#id').val('');
+        $('#userModal').modal('show');
     });
 
+    // Pencarian real-time (ditambahkan)
+    $('#search').on('input', function(){
+        fetchUsers();
+    });
+
+    // Submit form (tetap, tapi perbaiki response handling)
     $('#userForm').submit(function(e){
         e.preventDefault();
-        let id = $('#user_id').val();
-        let url = id ? '/users/update/' + id : '/users/create';
-        $.post(url, {
-            nama: $('#nama').val(),
-            email: $('#email').val(),
-            gender: $('#gender').val(),
-            umur: $('#umur').val()
-        }, function(){
-            userModal.hide();
-            fetchData();
+        let id = $('#id').val();
+        let url = id ? `/users/update/${id}` : '/users/store';
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(res){
+                try {
+                    let r = (typeof res === 'string') ? JSON.parse(res) : res;
+                    if(r.status === 'success') {
+                        $('#userForm')[0].reset();
+                        $('#id').val('');
+                        $('#userModal').modal('hide'); // Tutup modal
+                        fetchUsers();
+                    } else {
+                        alert('Error: ' + (r.errors ? JSON.stringify(r.errors) : r.message));
+                    }
+                } catch(err){
+                    console.error(err);
+                    alert('Server error');
+                }
+            },
+            error: function(xhr){
+                console.error(xhr.responseText);
+                alert('Error request');
+            }
         });
     });
 
     $(document).on('click', '.edit', function(){
         let id = $(this).data('id');
-        $.getJSON('/users/edit/' + id, function(user){
-            $('#user_id').val(user.id);
-            $('#nama').val(user.nama);
-            $('#email').val(user.email);
-            $('#gender').val(user.gender);
-            $('#umur').val(user.umur);
-            $('.modal-title').text('Edit User');
-            userModal.show();
+        $.ajax({
+            url: `/users/edit/${id}`,
+            method: 'GET',
+            success: function(data){
+                try {
+                    let u = (typeof data === 'string') ? JSON.parse(data) : data;
+                    $('#id').val(u.id);
+                    $('#nama').val(u.nama);
+                    $('#email').val(u.email);
+                    $('#gender').val(u.gender);
+                    $('#umur').val(u.umur);
+                    $('#userModal').modal('show'); // Buka modal untuk edit
+                } catch(err){
+                    console.error(err);
+                    alert('Error loading user data');
+                }
+            },
+            error: function(xhr){
+                console.error(xhr.responseText);
+                alert('Error fetching user');
+            }
         });
     });
 
+    // Delete (ubah method ke POST sesuai routes)
     $(document).on('click', '.delete', function(){
         let id = $(this).data('id');
-        let nama = $(this).data('nama');
-        if(!confirm(`Yakin hapus user "${nama}"?`)) return;
-        $.post('/users/delete/' + id, { _method: 'DELETE' }, function(){
-            fetchData();
+        if(!confirm("Yakin hapus user?")) return;
+        $.ajax({
+            url: `/users/delete/${id}`,
+            method: 'POST', // Ubah dari DELETE ke POST
+            success: function(res){
+                try {
+                    let r = (typeof res === 'string') ? JSON.parse(res) : res;
+                    if(r.status === 'success') {
+                        fetchUsers();
+                    } else {
+                        alert('Error: ' + r.message);
+                    }
+                } catch(err){
+                    console.error(err);
+                    alert('Server error');
+                }
+            },
+            error: function(xhr){
+                console.error(xhr.responseText);
+                alert('Server error');
+            }
         });
     });
-
 });
 
 </script>
-
 </body>
 </html>
